@@ -57,20 +57,111 @@ async function markRead(req, res) {
 
 async function sendNotification(inquiry) {
   const resend = new Resend(process.env.RESEND_API_KEY);
+
+  const waPhone = (inquiry.phone || '').replace(/[^0-9]/g, '');
+  const phoneCell = inquiry.phone
+    ? `<a href="tel:${esc(inquiry.phone)}" style="color:#C85E1E;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;">${esc(inquiry.phone)}</a>`
+    : `<span style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#888877;">&#8212;</span>`;
+  const waButton = waPhone
+    ? `<td><a href="https://wa.me/${waPhone}" style="display:inline-block;background:#1a1a1a;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;text-decoration:none;padding:12px 24px;">WHATSAPP</a></td>`
+    : '';
+
   await resend.emails.send({
     from: process.env.FROM_ADDRESS,
     to: process.env.OWNER_EMAIL,
     subject: `New IShips Inquiry — ${inquiry.division}`,
-    html: `
-      <h2>New Inquiry Received</h2>
-      <table cellpadding="6" style="border-collapse:collapse">
-        <tr><td><strong>Name</strong></td><td>${esc(inquiry.name)}</td></tr>
-        <tr><td><strong>Email</strong></td><td>${esc(inquiry.email)}</td></tr>
-        <tr><td><strong>Phone</strong></td><td>${esc(inquiry.phone || '—')}</td></tr>
-        <tr><td><strong>Division</strong></td><td>${esc(inquiry.division)}</td></tr>
-        <tr><td><strong>Message</strong></td><td style="white-space:pre-wrap">${esc(inquiry.message)}</td></tr>
-      </table>
-    `,
+    html: `<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#F4F1EA;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#F4F1EA;">
+    <tr>
+      <td align="center" style="padding:32px 16px;">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:600px;background:#F4F1EA;">
+
+          <!-- HEADER -->
+          <tr>
+            <td style="background:#1a1a1a;padding:32px 40px;">
+              <div style="font-family:Arial,Helvetica,sans-serif;font-size:34px;font-weight:bold;letter-spacing:6px;color:#E8732A;text-transform:uppercase;line-height:1;">ISHIPS</div>
+              <div style="font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:bold;letter-spacing:3px;color:#9a9a8a;text-transform:uppercase;margin-top:8px;">NEW WEBSITE ENQUIRY</div>
+            </td>
+          </tr>
+
+          <!-- FIELDS -->
+          <tr>
+            <td style="padding:32px 40px 0 40px;">
+
+              <!-- Name -->
+              <table width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding-bottom:14px;border-bottom:1px solid #ddd8cc;">
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:bold;letter-spacing:2px;color:#888877;text-transform:uppercase;margin-bottom:5px;">Name</div>
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#1a1a1a;">${esc(inquiry.name)}</div>
+                  </td>
+                </tr>
+                <tr><td style="height:14px;"></td></tr>
+
+                <!-- Email -->
+                <tr>
+                  <td style="padding-bottom:14px;border-bottom:1px solid #ddd8cc;">
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:bold;letter-spacing:2px;color:#888877;text-transform:uppercase;margin-bottom:5px;">Email</div>
+                    <div><a href="mailto:${esc(inquiry.email)}" style="color:#C85E1E;text-decoration:none;font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;">${esc(inquiry.email)}</a></div>
+                  </td>
+                </tr>
+                <tr><td style="height:14px;"></td></tr>
+
+                <!-- Phone -->
+                <tr>
+                  <td style="padding-bottom:14px;border-bottom:1px solid #ddd8cc;">
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:bold;letter-spacing:2px;color:#888877;text-transform:uppercase;margin-bottom:5px;">Phone</div>
+                    <div>${phoneCell}</div>
+                  </td>
+                </tr>
+                <tr><td style="height:14px;"></td></tr>
+
+                <!-- Division -->
+                <tr>
+                  <td style="padding-bottom:14px;border-bottom:1px solid #ddd8cc;">
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:bold;letter-spacing:2px;color:#888877;text-transform:uppercase;margin-bottom:5px;">Division</div>
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;font-weight:bold;color:#1a1a1a;">${esc(inquiry.division)}</div>
+                  </td>
+                </tr>
+                <tr><td style="height:14px;"></td></tr>
+
+                <!-- Message -->
+                <tr>
+                  <td style="padding-bottom:28px;">
+                    <div style="font-family:Arial,Helvetica,sans-serif;font-size:9px;font-weight:bold;letter-spacing:2px;color:#888877;text-transform:uppercase;margin-bottom:8px;">Message</div>
+                    <div style="background:#EDE9DF;border-left:4px solid #E8732A;padding:16px 20px;">
+                      <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#1a1a1a;line-height:1.6;white-space:pre-wrap;">${esc(inquiry.message)}</div>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- BUTTONS -->
+          <tr>
+            <td style="padding:0 40px 40px 40px;">
+              <table cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="padding-right:12px;">
+                    <a href="mailto:${esc(inquiry.email)}" style="display:inline-block;background:#E8732A;color:#1a1a1a;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;text-decoration:none;padding:12px 24px;">REPLY BY EMAIL</a>
+                  </td>
+                  ${waButton}
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`,
   });
 }
 
