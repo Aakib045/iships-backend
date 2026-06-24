@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const AdminUser = require('../models/AdminUser');
 
 // POST /api/admin/login
 async function login(req, res) {
@@ -8,13 +9,13 @@ async function login(req, res) {
     return res.status(400).json({ error: 'username and password are required' });
   }
 
-  const validUser = username === process.env.ADMIN_USERNAME;
-  const hash = process.env.ADMIN_PASSWORD_HASH || '';
+  const admin = await AdminUser.findOne({ username });
 
-  // Always run bcrypt.compare to prevent timing-based username enumeration
-  const validPass = await bcrypt.compare(password, hash || '$2b$10$invalidhashpadding000000000000000000000000000000000000');
+  // Always run bcrypt compare to prevent timing-based username enumeration
+  const hash = admin?.passwordHash || '$2b$10$invalidhashpadding000000000000000000000000000000000000';
+  const validPass = await bcrypt.compare(password, hash);
 
-  if (!validUser || !validPass) {
+  if (!admin || !validPass) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
@@ -22,4 +23,32 @@ async function login(req, res) {
   res.json({ token, expiresIn: 28800 });
 }
 
-module.exports = { login };
+// POST /api/admin/change-password (protected)
+async function changePassword(req, res) {
+  const { currentPassword, newPassword } = req.body;
+
+  if (!currentPassword || !newPassword) {
+    return res.status(400).json({ error: 'currentPassword and newPassword are required' });
+  }
+
+  if (newPassword.length < 8) {
+    return res.status(422).json({ error: 'newPassword must be at least 8 characters' });
+  }
+
+  const admin = await AdminUser.findOne({ username: req.admin.sub });
+  if (!admin) {
+    return res.status(401).json({ error: 'Admin user not found' });
+  }
+
+  const valid = await bcrypt.compare(currentPassword, admin.passwordHash);
+  if (!valid) {
+    return res.status(401).json({ error: 'Current password is incorrect' });
+  }
+
+  admin.passwordHash = await bcrypt.hash(newPassword, 10);
+  await admin.save();
+
+  res.json({ message: 'Password updated successfully' });
+}
+
+module.exports = { login, changePassword };

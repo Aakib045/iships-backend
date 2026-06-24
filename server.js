@@ -5,6 +5,7 @@ const connectDB = require('./src/config/db');
 const inquiryRoutes = require('./src/routes/inquiries');
 const adminRoutes = require('./src/routes/admin');
 const settingsRoutes = require('./src/routes/settings');
+const seedAdmin = require('./src/utils/seedAdmin');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -45,5 +46,6 @@ app.use((err, _req, res, _next) => {
 });
 
 connectDB()
+  .then(() => seedAdmin())
   .then(() => app.listen(PORT, () => console.log(`Server running on port ${PORT}`)))
-  .catch((err) => { console.error('DB connection failed:', err.message); process.exit(1); });
+  .catch((err) => { console.error('Startup failed:', err.message); process.exit(1); });
